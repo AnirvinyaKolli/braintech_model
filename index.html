@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>In-Ear Sleep Device | 3D Model</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Three.js Core r128 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <!-- Three.js OrbitControls -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #020617;
+      color: #f8fafc;
+      overflow: hidden;
+      user-select: none;
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #06b6d4;
+    }
+    /* 3D Callout Pins */
+    .callout-pin {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      pointer-events: auto;
+      cursor: pointer;
+      transition: transform 0.15s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      z-index: 20;
+    }
+    .callout-pin:hover {
+      transform: translate(-50%, -50%) scale(1.2);
+      z-index: 30;
+    }
+    .callout-pin.active {
+      background-color: #06b6d4 !important;
+      color: #020617 !important;
+      border-color: #ffffff !important;
+      box-shadow: 0 0 18px rgba(6, 182, 212, 0.9);
+      transform: translate(-50%, -50%) scale(1.22);
+      z-index: 30;
+    }
+    /* Subtle CAD Grid Background */
+    .cad-bg {
+      background-image: 
+        radial-gradient(rgba(6, 182, 212, 0.12) 1px, transparent 1px),
+        linear-gradient(to right, rgba(30, 41, 59, 0.25) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(30, 41, 59, 0.25) 1px, transparent 1px);
+      background-size: 24px 24px, 96px 96px, 96px 96px;
+    }
+    /* Range Slider Styling */
+    input[type=range] {
+      -webkit-appearance: none;
+      background: transparent;
+    }
+    input[type=range]::-webkit-slider-runnable-track {
+      height: 6px;
+      border-radius: 4px;
+      background: #1e293b;
+      border: 1px solid #334155;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 16px;
+      width: 16px;
+      border-radius: 50%;
+      background: #22d3ee;
+      cursor: pointer;
+      margin-top: -6px;
+      box-shadow: 0 0 10px rgba(34, 211, 238, 0.8);
+      border: 2px solid #ffffff;
+    }
+  </style>
+</head>
+<body class="h-screen w-screen flex flex-col overflow-hidden">
+
+  <!-- TOP ENGINEERING HEADER BAR -->
+  <header class="h-14 border-b border-slate-800/90 bg-slate-950/90 backdrop-blur-md px-4 flex items-center justify-between z-30 shrink-0">
+    <div class="flex items-center space-x-3">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-700 flex items-center justify-center shadow-lg shadow-cyan-950/60 border border-cyan-400/30">
+        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"/>
+        </svg>
+      </div>
+      <div>
+        <div class="flex items-center space-x-2">
+          <span class="font-bold tracking-tight text-white text-base">IN-EAR SLEEP DEVICE</span>
+          <span class="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800/80 font-semibold">3D MODEL</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Camera Views -->
+    <div class="flex items-center gap-3">
+      <button id="btn-cam-iso" class="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-[11px] font-mono text-slate-200 transition cursor-pointer">
+        Iso View
+      </button>
+      <button id="btn-cam-side" class="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-[11px] font-mono text-slate-200 transition cursor-pointer">
+        Side View
+      </button>
+      <button id="btn-cam-canal" class="px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-[11px] font-mono text-slate-200 transition cursor-pointer">
+        Medial / Electrodes
+      </button>
+      <div class="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/90 p-1.5 shadow-lg shadow-black/30">
+        <span class="hidden xl:block px-2 text-[10px] font-mono font-bold uppercase tracking-widest text-slate-400">Assembly</span>
+        <div class="flex items-center rounded-lg bg-slate-950 p-0.5">
+          <button id="btn-view-exterior" aria-pressed="true" class="px-3.5 py-2 rounded-md bg-cyan-400 text-slate-950 text-xs font-bold shadow-md shadow-cyan-950/50 transition cursor-pointer">Exterior</button>
+          <button id="btn-view-interior" aria-pressed="false" class="px-3.5 py-2 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-semibold transition cursor-pointer">Interior</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE -->
+  <div class="flex-1 flex flex-col lg:flex-row relative overflow-hidden">
+
+    <!-- LEFT SIDEBAR: INTERACTIVE CAD CONTROLS & BOM EXPLORER -->
+    <aside class="w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-slate-800/90 bg-slate-950/95 backdrop-blur-md flex flex-col z-20 shrink-0 max-h-[38vh] lg:max-h-full">
+      
+      <!-- Assembly & Visualization Controls -->
+      <div class="p-3.5 border-b border-slate-800/90 space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center">
+            <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+            Model Controls
+          </span>
+          <button id="btn-reset-all" class="text-[11px] font-mono text-slate-400 hover:text-cyan-300 underline cursor-pointer">
+            Reset All
+          </button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <button id="btn-toggle-pins" class="px-2.5 py-1.5 rounded-lg border border-slate-700 bg-slate-900 text-xs text-slate-300 hover:bg-slate-800 flex items-center justify-center space-x-1.5 cursor-pointer">
+            <span>Callout Pins:</span>
+            <span id="label-pins-state" class="font-mono text-emerald-400 font-bold">ON</span>
+          </button>
+          <button id="btn-toggle-rotate" class="px-2.5 py-1.5 rounded-lg border border-slate-700 bg-slate-900 text-xs text-slate-300 hover:bg-slate-800 flex items-center justify-center space-x-1.5 cursor-pointer">
+            <span>Auto-Orbit:</span>
+            <span id="label-rotate-state" class="font-mono text-slate-400 font-bold">OFF</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Bill of Materials (BOM) Component Selector -->
+      <div class="px-3.5 py-2 border-b border-slate-800/80 bg-slate-900/50 flex items-center justify-between">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-300">Device Parts (3)</span>
+      </div>
+
+      <div id="bom-list" class="flex-1 overflow-y-auto p-2.5 space-y-1.5">
+        <!-- Populated dynamically via JS -->
+      </div>
+    </aside>
+
+    <!-- CENTER 3D VIEWPORT CANVAS -->
+    <main id="viewport-container" class="flex-1 relative cad-bg overflow-hidden">
+      <!-- Three.js Canvas Mounted Here -->
+      <div id="canvas-mount" class="w-full h-full"></div>
+
+      <!-- Floating 3D Callout Overlay Layer -->
+      <div id="callout-layer" class="absolute inset-0 pointer-events-none overflow-hidden"></div>
+
+      <div class="hidden sm:flex absolute bottom-3 left-3 pointer-events-none items-center space-x-2 bg-slate-950/80 backdrop-blur border border-slate-800/80 px-3 py-1.5 rounded-lg text-[11px] font-mono text-slate-400 z-10">
+        <span>Drag: rotate</span><span>•</span><span>Scroll: zoom</span><span>•</span><span>Click part: inspect</span>
+      </div>
+
+      <!-- RIGHT FLOATING SPECIFICATION INSPECTOR CARD -->
+      <div id="inspector-card" class="absolute top-3 right-3 bottom-3 w-80 sm:w-96 bg-slate-950/92 backdrop-blur-xl border border-slate-800/90 rounded-2xl shadow-2xl flex flex-col z-20 overflow-hidden transition-all duration-300">
+        
+        <!-- Card Header -->
+        <div class="p-4 border-b border-slate-800/90 bg-gradient-to-r from-slate-900 via-slate-900 to-cyan-950/40 flex items-start justify-between">
+          <div>
+            <div class="flex items-center space-x-2">
+              <span id="spec-badge-num" class="px-2 py-0.5 rounded text-xs font-mono font-bold bg-cyan-500 text-slate-950">
+                #01
+              </span>
+              <span id="spec-category" class="text-[11px] font-mono uppercase tracking-wider text-cyan-400 font-semibold">
+                Exterior
+              </span>
+            </div>
+            <h2 id="spec-title" class="text-base font-bold text-white mt-1 leading-snug">
+              Full Body
+            </h2>
+          </div>
+          <button id="btn-unfocus" class="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs font-mono cursor-pointer" title="Reset Camera Focus">
+            Reset View
+          </button>
+        </div>
+
+        <!-- Card Body -->
+        <div class="p-4 overflow-y-auto flex-1 space-y-4 text-xs">
+          
+          <p class="text-slate-300 leading-relaxed text-xs">A wearable for sleep support, with neural sensing, gentle stimulation, and audio.</p>
+        </div>
+
+        <!-- Card Footer: Prev / Next Part Stepper -->
+        <div class="p-3 border-t border-slate-800/90 bg-slate-900/80 flex items-center justify-between">
+          <button id="btn-prev-part" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium flex items-center cursor-pointer transition">
+            ← Prev Part
+          </button>
+          <span id="spec-counter" class="font-mono text-[11px] text-slate-400">1 / 3</span>
+          <button id="btn-next-part" class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-semibold text-xs flex items-center cursor-pointer transition">
+            Next Part →
+          </button>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- 3D CAD MODEL VIEWER -->
+  <script>
+    (function () {
+      "use strict";
+
+      // ============================================================================
+      // 1. DEVICE COMPONENTS
+      // ============================================================================
+      const MODEL_PARTS = [
+        {
+          id: "full_body",
+          num: "01",
+          name: "Full Body",
+          shortName: "Full body",
+          category: "Exterior",
+          camTargetOffset: new THREE.Vector3(3, 2.8, 5),
+          badgeColor: "#06b6d4"
+        },
+        {
+          id: "sense_contacts",
+          num: "02",
+          name: "Sensing Contacts",
+          shortName: "Sensing contacts",
+          category: "Sensing",
+          camTargetOffset: new THREE.Vector3(2, 2.5, 4),
+          badgeColor: "#22d3ee"
+        },
+        {
+          id: "stim_contacts",
+          num: "03",
+          name: "Stimulation Contacts",
+          shortName: "Stimulation contacts",
+          category: "Stimulation",
+          camTargetOffset: new THREE.Vector3(2, 2.5, 4),
+          badgeColor: "#eab308"
+        }
+      ];
+      const INTERIOR_CALLOUTS = [
+        { id: "circuit_board", num: "04", name: "Circuit Board", category: "Electronics", camOffset: new THREE.Vector3(2, 2.5, 4) },
+        { id: "processor", num: "05", name: "Processor", category: "Control", camOffset: new THREE.Vector3(2, 2.5, 4) },
+        { id: "receiver", num: "06", name: "Bluetooth Receiver", category: "Electronics", camOffset: new THREE.Vector3(2, 2.5, 4) },
+        { id: "battery", num: "07", name: "Battery", category: "Power", camOffset: new THREE.Vector3(2, 2.5, 4) }
+      ];
+      const ALL_CALLOUTS = MODEL_PARTS.concat(INTERIOR_CALLOUTS);
+
+      // ============================================================================
+      // 2. THREE.JS SCENE, CAMERA & RENDERER SETUP
+      // ============================================================================
+      const mount = document.getElementById("canvas-mount");
+      const calloutLayer = document.getElementById("callout-layer");
+      const calloutElements = {};
+
+      const scene = new THREE.Scene();
+
+      const camera = new THREE.PerspectiveCamera(38, mount.clientWidth / mount.clientHeight, 0.1, 100);
+      camera.position.set(3.3, 2.8, 3.8);
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+      renderer.setSize(mount.clientWidth, mount.clientHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.15;
+      mount.appendChild(renderer.domElement);
+
+      const controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.06;
+      controls.maxDistance = 18;
+      controls.minDistance = 2.2;
+      const modelCenter = new THREE.Vector3(-0.65, 0.02, 0);
+      controls.target.copy(modelCenter);
+
+      // Lighting Setup (Medical Studio Three-Point + Rim Lighting)
+      const ambientLight = new THREE.AmbientLight(0xdbeafe, 0.65);
+      scene.add(ambientLight);
+
+      const keyLight = new THREE.DirectionalLight(0xffffff, 1.35);
+      keyLight.position.set(6, 10, 7);
+      keyLight.castShadow = true;
+      scene.add(keyLight);
+
+      const rimLightCyan = new THREE.DirectionalLight(0x06b6d4, 0.9);
+      rimLightCyan.position.set(-7, 4, -6);
+      scene.add(rimLightCyan);
+
+      const bottomFillLight = new THREE.DirectionalLight(0x38bdf8, 0.55);
+      bottomFillLight.position.set(2, -8, 4);
+      scene.add(bottomFillLight);
+
+      // Subtle Reference CAD Grid Floor
+      const cadGrid = new THREE.GridHelper(14, 28, 0x0891b2, 0x1e293b);
+      cadGrid.position.y = -0.9;
+      cadGrid.material.transparent = true;
+      cadGrid.material.opacity = 0.35;
+      scene.add(cadGrid);
+
+      // Root Assembly Group
+      const rootAssembly = new THREE.Group();
+      scene.add(rootAssembly);
+
+      // Dictionary mapping BOM id -> { group, basePosition, meshes, pinEl, anchorLocal }
+      const partRegistry = {};
+
+      // ============================================================================
+      // 3. LOAD THE USER'S GLB ASSEMBLY
+      // ============================================================================
+
+      function registerPart(id, group, anchorLocal) {
+        const meshes = [];
+        group.traverse((child) => {
+          if (child.isMesh) {
+            child.userData.partId = id;
+            meshes.push(child);
+          }
+        });
+        partRegistry[id] = {
+          id,
+          group,
+          meshes,
+          anchorLocal: anchorLocal || new THREE.Vector3(0, 0, 0),
+          pinEl: null
+        };
+        rootAssembly.add(group);
+      }
+
+      const modelFiles = {
+        full_body: "FullBody.glb",
+        cut_body: "CutBody.glb",
+        circuit_board: "CircutBoard.glb",
+        processor: "Processor.glb",
+        receiver: "BlueToothReciver.glb",
+        battery: "Battery.glb",
+        sense_contacts: "SenseContacts.glb",
+        stim_contacts: "StimContacts.glb"
+      };
+      const modelTints = {
+        circuit_board: 0x16834b, // PCB green
+        processor: 0x334155,     // Graphite blue
+        receiver: 0xd89a37,      // Warm gold
+        battery: 0xcbd5e1        // Cool silver
+      };
+      const loader = new THREE.GLTFLoader();
+      const modelMaterials = [];
+      let viewMode = "exterior";
+
+      function setModelView(mode) {
+        viewMode = mode;
+        Object.entries(partRegistry).forEach(([id, reg]) => {
+          const isContact = id === "sense_contacts" || id === "stim_contacts";
+          reg.group.visible = isContact || (mode === "exterior" ? id === "full_body" : id !== "full_body");
+        });
+        document.getElementById("btn-view-exterior").className = mode === "exterior"
+          ? "px-3.5 py-2 rounded-md bg-cyan-400 text-slate-950 text-xs font-bold shadow-md shadow-cyan-950/50 transition cursor-pointer"
+          : "px-3.5 py-2 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-semibold transition cursor-pointer";
+        document.getElementById("btn-view-exterior").setAttribute("aria-pressed", mode === "exterior");
+        document.getElementById("btn-view-interior").className = mode === "interior"
+          ? "px-3.5 py-2 rounded-md bg-cyan-400 text-slate-950 text-xs font-bold shadow-md shadow-cyan-950/50 transition cursor-pointer"
+          : "px-3.5 py-2 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-semibold transition cursor-pointer";
+        document.getElementById("btn-view-interior").setAttribute("aria-pressed", mode === "interior");
+      }
+      document.getElementById("btn-view-exterior").addEventListener("click", () => setModelView("exterior"));
+      document.getElementById("btn-view-interior").addEventListener("click", () => setModelView("interior"));
+
+      Object.entries(modelFiles).forEach(([id, file]) => {
+        loader.load(`Models/${file}`, (gltf) => {
+          const model = gltf.scene;
+          model.traverse((node) => {
+            if (!node.isMesh) return;
+            // Restore shadowing only for the cut shell; keep the other imported
+            // parts free of the streaks caused by their shadow-map artifacts.
+            node.castShadow = id === "cut_body";
+            node.receiveShadow = id === "cut_body";
+            const materials = Array.isArray(node.material) ? node.material : [node.material];
+            materials.forEach((material) => {
+              if (!material) return;
+              material.side = THREE.DoubleSide;
+              if (id === "cut_body" && material.color) material.color.set(0x8295a7);
+              else if (id === "full_body" && material.color) material.color.set(0x9dc9e8);
+              else if (modelTints[id] && material.color) material.color.setHex(modelTints[id]);
+              if (!material.emissive) material.emissive = new THREE.Color(0x000000);
+              node.userData.origEmissive = material.emissive.clone();
+              modelMaterials.push({ material, original: material.emissive.clone() });
+            });
+          });
+          // The cut shell and electronics were exported in a frame 2.213 units
+          // behind the contact and full-body models. Bring that assembly forward;
+          // leave both contact models in their authored positions.
+          if (!["full_body", "sense_contacts", "stim_contacts"].includes(id)) {
+            model.position.z += 2.21325469;
+          }
+          const bounds = new THREE.Box3().setFromObject(model);
+          const anchor = bounds.getCenter(new THREE.Vector3()).sub(model.position);
+          registerPart(id, model, anchor);
+          const isContact = id === "sense_contacts" || id === "stim_contacts";
+          model.visible = isContact || (viewMode === "exterior" ? id === "full_body" : id !== "full_body");
+          const pin = calloutElements[id];
+          if (partRegistry[id] && pin) partRegistry[id].pinEl = pin;
+          selectPart(selectedPartIndex, false);
+        }, undefined, (error) => console.error(`Could not load Models/${file}`, error));
+      });
+
+      // ============================================================================
+      // 6. UI POPULATOR, CALLOUT PINS & INTERACTION LOGIC
+      // ============================================================================
+      let selectedPartIndex = 0;
+      let isPinsVisible = true;
+      let isAutoOrbit = false;
+
+      // Camera smooth interpolation targets
+      const desiredCamTarget = modelCenter.clone();
+      let desiredCamPos = null;
+
+      const bomListEl = document.getElementById("bom-list");
+
+      // Build BOM List and 3D Floating Callout Pins
+      MODEL_PARTS.forEach((part, idx) => {
+        // 1. Sidebar BOM item
+        const item = document.createElement("button");
+        item.id = `bom-item-${part.id}`;
+        item.className = "w-full text-left px-3 py-2 rounded-xl border border-slate-800/90 bg-slate-900/60 hover:bg-slate-800/80 transition flex items-center justify-between group cursor-pointer";
+        item.innerHTML = `
+          <div class="flex items-center space-x-2.5 min-w-0">
+            <span class="text-[11px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-800 text-cyan-400 group-hover:bg-cyan-500 group-hover:text-slate-950 transition shrink-0">
+              ${part.num}
+            </span>
+            <div class="truncate">
+              <div class="text-xs font-semibold text-slate-200 truncate">${part.shortName}</div>
+              <div class="text-[10px] text-slate-400 truncate">${part.category}</div>
+            </div>
+          </div>
+          <svg class="w-3.5 h-3.5 text-slate-500 group-hover:text-cyan-400 shrink-0 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        `;
+        item.addEventListener("click", () => selectPart(idx, true));
+        bomListEl.appendChild(item);
+
+        // 2. Floating 3D HTML Pin
+        const pin = document.createElement("div");
+        pin.className = "callout-pin w-6 h-6 rounded-full bg-slate-950/90 border border-cyan-400 text-cyan-300 font-mono text-[11px] font-bold flex items-center justify-center shadow-lg";
+        pin.textContent = part.num;
+        pin.title = part.name;
+        calloutElements[part.id] = pin;
+        pin.addEventListener("click", (e) => {
+          e.stopPropagation();
+          selectPart(idx, true);
+        });
+        calloutLayer.appendChild(pin);
+        if (partRegistry[part.id]) {
+          partRegistry[part.id].pinEl = pin;
+        }
+      });
+
+      // Interior electronics are not listed as top-level parts, but each has
+      // its own pin while its model is visible in the cutaway assembly.
+      INTERIOR_CALLOUTS.forEach((part) => {
+        const pin = document.createElement("div");
+        pin.className = "callout-pin w-6 h-6 rounded-full bg-slate-950/90 border border-emerald-400 text-emerald-300 font-mono text-[11px] font-bold flex items-center justify-center shadow-lg";
+        pin.textContent = part.num;
+        pin.title = part.name;
+        calloutElements[part.id] = pin;
+        pin.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const reg = partRegistry[part.id];
+          if (!reg) return;
+          desiredCamTarget.copy(reg.anchorLocal).add(reg.group.position);
+          desiredCamPos = desiredCamTarget.clone().add(part.camOffset);
+          document.getElementById("spec-badge-num").textContent = `#${part.num}`;
+          document.getElementById("spec-category").textContent = part.category;
+          document.getElementById("spec-title").textContent = part.name;
+          document.getElementById("spec-counter").textContent = "Interior component";
+        });
+        calloutLayer.appendChild(pin);
+        if (partRegistry[part.id]) partRegistry[part.id].pinEl = pin;
+      });
+
+      function selectPart(index, moveCamera = true) {
+        selectedPartIndex = (index + MODEL_PARTS.length) % MODEL_PARTS.length;
+        const part = MODEL_PARTS[selectedPartIndex];
+
+        // Update Inspector Card UI
+        document.getElementById("spec-badge-num").textContent = `#${part.num}`;
+        document.getElementById("spec-category").textContent = part.category;
+        document.getElementById("spec-title").textContent = part.name;
+        document.getElementById("spec-counter").textContent = `${selectedPartIndex + 1} / ${MODEL_PARTS.length}`;
+
+        // Highlight active BOM button & Pin
+        MODEL_PARTS.forEach((p, idx) => {
+          const btn = document.getElementById(`bom-item-${p.id}`);
+          const reg = partRegistry[p.id];
+          const isSelected = idx === selectedPartIndex;
+
+          if (btn) {
+            btn.className = isSelected
+              ? "w-full text-left px-3 py-2 rounded-xl border border-cyan-500/80 bg-cyan-950/40 transition flex items-center justify-between group cursor-pointer shadow-inner"
+              : "w-full text-left px-3 py-2 rounded-xl border border-slate-800/90 bg-slate-900/60 hover:bg-slate-800/80 transition flex items-center justify-between group cursor-pointer";
+          }
+          if (reg && reg.pinEl) {
+            reg.pinEl.classList.toggle("active", isSelected);
+          }
+
+          // Highlight 3D Mesh Emissive
+          if (reg) {
+            reg.meshes.forEach((m) => {
+              const materials = Array.isArray(m.material) ? m.material : [m.material];
+              materials.forEach((material) => {
+                if (!material || !material.emissive) return;
+                const original = modelMaterials.find((entry) => entry.material === material);
+                if (isSelected && p.id !== "full_body" && p.id !== "cut_body") {
+                  material.emissive.setHex(0x06b6d4);
+                  material.emissiveIntensity = 0.55;
+                } else if (original) {
+                  material.emissive.copy(original.original);
+                  material.emissiveIntensity = 1;
+                }
+              });
+            });
+          }
+        });
+
+        // Smooth camera focus on selected component
+        if (moveCamera && partRegistry[part.id]) {
+          const reg = partRegistry[part.id];
+          const worldAnchor = reg.anchorLocal.clone().add(reg.group.position);
+          desiredCamTarget.copy(worldAnchor);
+          desiredCamPos = worldAnchor.clone().add(part.camTargetOffset);
+        }
+      }
+
+      // Raycaster for direct 3D mesh clicking
+      const raycaster = new THREE.Raycaster();
+      const pointer = new THREE.Vector2();
+      let pointerDownPos = { x: 0, y: 0 };
+
+      renderer.domElement.addEventListener("pointerdown", (e) => {
+        pointerDownPos = { x: e.clientX, y: e.clientY };
+        desiredCamPos = null; // Release automated camera glide when user grabs orbit
+      });
+
+      renderer.domElement.addEventListener("pointerup", (e) => {
+        const dist = Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
+        if (dist > 5) return; // Ignore drag movements
+
+        const rect = renderer.domElement.getBoundingClientRect();
+        pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+        raycaster.setFromCamera(pointer, camera);
+        const allMeshes = [];
+        Object.values(partRegistry).forEach((r) => {
+          // Skip outer LSR shell when clicking inside in X-Ray mode
+          if (!r.group.visible) return;
+          allMeshes.push(...r.meshes);
+        });
+
+        const intersects = raycaster.intersectObjects(allMeshes, false);
+        if (intersects.length > 0) {
+          const hitPartId = intersects[0].object.userData.partId;
+          const idx = MODEL_PARTS.findIndex((p) => p.id === hitPartId);
+          if (idx !== -1) selectPart(idx, true);
+        }
+      });
+
+      // ============================================================================
+      // 7. UI SLIDERS & BUTTON EVENT HANDLERS
+      // ============================================================================
+      // Callout Pins Toggle
+      const btnTogglePins = document.getElementById("btn-toggle-pins");
+      const labelPinsState = document.getElementById("label-pins-state");
+      btnTogglePins.addEventListener("click", () => {
+        isPinsVisible = !isPinsVisible;
+        calloutLayer.style.display = isPinsVisible ? "block" : "none";
+        labelPinsState.textContent = isPinsVisible ? "ON" : "OFF";
+        labelPinsState.className = isPinsVisible ? "font-mono text-emerald-400 font-bold" : "font-mono text-slate-400 font-bold";
+      });
+
+      // Auto-Orbit Toggle
+      const btnToggleRotate = document.getElementById("btn-toggle-rotate");
+      const labelRotateState = document.getElementById("label-rotate-state");
+      btnToggleRotate.addEventListener("click", () => {
+        isAutoOrbit = !isAutoOrbit;
+        controls.autoRotate = isAutoOrbit;
+        controls.autoRotateSpeed = 1.6;
+        labelRotateState.textContent = isAutoOrbit ? "ON" : "OFF";
+        labelRotateState.className = isAutoOrbit ? "font-mono text-emerald-400 font-bold" : "font-mono text-slate-400 font-bold";
+      });
+
+      // Preset Camera View Buttons
+      document.getElementById("btn-cam-iso").addEventListener("click", () => {
+        desiredCamTarget.copy(modelCenter);
+        desiredCamPos = modelCenter.clone().add(new THREE.Vector3(3.3, 2.8, 3.8));
+      });
+      document.getElementById("btn-cam-side").addEventListener("click", () => {
+        desiredCamTarget.copy(modelCenter);
+        desiredCamPos = modelCenter.clone().add(new THREE.Vector3(0, 0.12, 5));
+      });
+      document.getElementById("btn-cam-canal").addEventListener("click", () => {
+        desiredCamTarget.copy(modelCenter);
+        desiredCamPos = modelCenter.clone().add(new THREE.Vector3(3.5, -2.8, 3.5));
+      });
+      document.getElementById("btn-unfocus").addEventListener("click", () => {
+        desiredCamTarget.copy(modelCenter);
+        desiredCamPos = modelCenter.clone().add(new THREE.Vector3(3.3, 2.8, 3.8));
+      });
+
+      document.getElementById("btn-reset-all").addEventListener("click", () => {
+        desiredCamTarget.copy(modelCenter);
+        desiredCamPos = modelCenter.clone().add(new THREE.Vector3(3.3, 2.8, 3.8));
+        selectPart(0, false);
+      });
+
+      document.getElementById("btn-prev-part").addEventListener("click", () => selectPart(selectedPartIndex - 1, true));
+      document.getElementById("btn-next-part").addEventListener("click", () => selectPart(selectedPartIndex + 1, true));
+
+      // Responsive Resize Handler
+      window.addEventListener("resize", () => {
+        camera.aspect = mount.clientWidth / mount.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(mount.clientWidth, mount.clientHeight);
+      });
+
+      // Initialize Selection
+      selectPart(0, false);
+      setModelView("exterior");
+
+      // ============================================================================
+      // 8. MAIN RENDER & ANIMATION LOOP
+      // ============================================================================
+      const tempVec = new THREE.Vector3();
+
+      function animate(now) {
+        requestAnimationFrame(animate);
+
+        // Smooth Camera Focus Glide
+        controls.target.lerp(desiredCamTarget, 0.08);
+        if (desiredCamPos) {
+          camera.position.lerp(desiredCamPos, 0.07);
+          if (camera.position.distanceTo(desiredCamPos) < 0.05) {
+            desiredCamPos = null;
+          }
+        }
+
+        controls.update();
+        renderer.render(scene, camera);
+
+        // 3. Project 3D Callout Anchors to 2D Screen Coordinates
+        if (isPinsVisible) {
+          const width = mount.clientWidth;
+          const height = mount.clientHeight;
+          ALL_CALLOUTS.forEach((part) => {
+            const reg = partRegistry[part.id];
+            if (!reg || !reg.pinEl) return;
+            if (!reg.group.visible) { reg.pinEl.style.display = "none"; return; }
+
+            tempVec.copy(reg.anchorLocal).add(reg.group.position);
+            tempVec.project(camera);
+
+            if (tempVec.z > 1) {
+              reg.pinEl.style.display = "none";
+            } else {
+              const x = (tempVec.x * 0.5 + 0.5) * width;
+              const y = (-(tempVec.y * 0.5) + 0.5) * height;
+              reg.pinEl.style.display = "flex";
+              reg.pinEl.style.left = `${x}px`;
+              reg.pinEl.style.top = `${y}px`;
+            }
+          });
+        }
+      }
+
+      window.onload = function () {
+        requestAnimationFrame(animate);
+      };
+    })();
+  </script>
+</body>
+</html>
